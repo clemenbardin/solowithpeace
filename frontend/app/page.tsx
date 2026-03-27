@@ -38,9 +38,9 @@ export default function Home() {
 
           <a
             className="inline-flex items-center justify-center rounded-full border border-zinc-200 bg-white/70 px-4 py-2 text-sm font-semibold hover:bg-white"
-            href="#temoignages"
+            href="/login"
           >
-            Rejoindre
+            Se connecter
           </a>
         </div>
       </header>
