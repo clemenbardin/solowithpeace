@@ -5,20 +5,33 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 
-export default function LoginPage() {
+export default function RegisterPage() {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { register } = useAuth();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
+
+    if (password !== confirm) {
+      setError('Les mots de passe ne correspondent pas');
+      return;
+    }
+    if (password.length < 6) {
+      setError('Le mot de passe doit faire au moins 6 caractères');
+      return;
+    }
+
     setLoading(true);
-    const result = await login(email, password);
+    const result = await register(email, password, name);
     setLoading(false);
+
     if (result.success) {
       router.push('/dashboard');
     } else {
@@ -38,10 +51,10 @@ export default function LoginPage() {
             <span className="text-sm font-semibold tracking-tight">SoloWithPeace</span>
           </Link>
           <Link
-            href="/register"
+            href="/login"
             className="inline-flex items-center justify-center rounded-full border border-zinc-200 bg-white/70 px-4 py-2 text-sm font-semibold hover:bg-white transition-colors"
           >
-            Créer un compte
+            Se connecter
           </Link>
         </div>
       </header>
@@ -52,13 +65,13 @@ export default function LoginPage() {
           {/* Card */}
           <div className="overflow-hidden rounded-3xl border border-zinc-200 bg-white/80 shadow-sm backdrop-blur">
             {/* Bandeau déco */}
-            <div className="h-2 bg-gradient-to-r from-amber-500/60 via-sky-500/50 to-emerald-500/60" />
+            <div className="h-2 bg-gradient-to-r from-emerald-500/60 via-amber-500/50 to-sky-500/60" />
 
             <div className="p-8">
               <div className="mb-8">
-                <h1 className="text-2xl font-extrabold tracking-tight">Bon retour !</h1>
+                <h1 className="text-2xl font-extrabold tracking-tight">Rejoignez l&apos;aventure</h1>
                 <p className="mt-1 text-sm text-zinc-600">
-                  Connectez-vous pour rejoindre vos prochains voyages.
+                  Créez votre compte et trouvez vos prochains compagnons de voyage.
                 </p>
               </div>
 
@@ -73,6 +86,22 @@ export default function LoginPage() {
               )}
 
               <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="name" className="text-xs font-semibold text-zinc-600 uppercase tracking-wide">
+                    Nom complet
+                  </label>
+                  <input
+                    id="name"
+                    type="text"
+                    placeholder="Alice Martin"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full rounded-xl border border-zinc-200 bg-[#F6F1E6]/60 px-4 py-3 text-sm placeholder-zinc-400 outline-none transition focus:border-zinc-400 focus:ring-2 focus:ring-zinc-200"
+                    required
+                    autoComplete="name"
+                  />
+                </div>
+
                 <div className="flex flex-col gap-1.5">
                   <label htmlFor="email" className="text-xs font-semibold text-zinc-600 uppercase tracking-wide">
                     Email
@@ -96,12 +125,28 @@ export default function LoginPage() {
                   <input
                     id="password"
                     type="password"
-                    placeholder="••••••••"
+                    placeholder="Min. 6 caractères"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full rounded-xl border border-zinc-200 bg-[#F6F1E6]/60 px-4 py-3 text-sm placeholder-zinc-400 outline-none transition focus:border-zinc-400 focus:ring-2 focus:ring-zinc-200"
                     required
-                    autoComplete="current-password"
+                    autoComplete="new-password"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="confirm" className="text-xs font-semibold text-zinc-600 uppercase tracking-wide">
+                    Confirmer le mot de passe
+                  </label>
+                  <input
+                    id="confirm"
+                    type="password"
+                    placeholder="••••••••"
+                    value={confirm}
+                    onChange={(e) => setConfirm(e.target.value)}
+                    className="w-full rounded-xl border border-zinc-200 bg-[#F6F1E6]/60 px-4 py-3 text-sm placeholder-zinc-400 outline-none transition focus:border-zinc-400 focus:ring-2 focus:ring-zinc-200"
+                    required
+                    autoComplete="new-password"
                   />
                 </div>
 
@@ -116,30 +161,20 @@ export default function LoginPage() {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                       </svg>
-                      Connexion…
+                      Création du compte…
                     </span>
                   ) : (
-                    'Se connecter'
+                    'Créer mon compte'
                   )}
                 </button>
               </form>
 
               <p className="mt-6 text-center text-sm text-zinc-600">
-                Pas encore de compte ?{' '}
-                <Link href="/register" className="font-semibold text-zinc-900 underline underline-offset-2 hover:text-zinc-700">
-                  Créer un compte
+                Déjà un compte ?{' '}
+                <Link href="/login" className="font-semibold text-zinc-900 underline underline-offset-2 hover:text-zinc-700">
+                  Se connecter
                 </Link>
               </p>
-
-              {/* Comptes de démo */}
-              <div className="mt-6 rounded-2xl border border-zinc-200 bg-[#F6F1E6]/50 p-4">
-                <p className="mb-2 text-xs font-semibold text-zinc-500 uppercase tracking-wide">Comptes de démo</p>
-                <div className="flex flex-col gap-1 text-xs text-zinc-600 font-mono">
-                  <span>admin@admin.com · admin</span>
-                  <span>user@user.com · user</span>
-                  <span>alice@example.com · alice123</span>
-                </div>
-              </div>
             </div>
           </div>
 

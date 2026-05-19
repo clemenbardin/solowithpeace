@@ -1,9 +1,8 @@
-// frontend/context/AuthContext.js
 'use client';
 
 import { createContext, useContext, useState, useEffect } from 'react';
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -20,29 +19,27 @@ export function AuthProvider({ children }) {
 
   const fetchUser = async (token) => {
     try {
-      const res = await fetch('http://localhost:5000/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` }
+      const res = await fetch('/api/auth/me', {
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
-        const userData = await res.json();
-        setUser(userData);
+        setUser(await res.json());
       } else {
         localStorage.removeItem('token');
       }
-    } catch (error) {
-      console.error('Erreur récupération utilisateur', error);
+    } catch {
+      localStorage.removeItem('token');
     } finally {
       setLoading(false);
     }
   };
 
   const login = async (email, password) => {
-    const res = await fetch('http://localhost:5000/api/auth/login', {
+    const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email, password }),
     });
-    
     const data = await res.json();
     if (res.ok) {
       localStorage.setItem('token', data.token);
@@ -52,13 +49,12 @@ export function AuthProvider({ children }) {
     return { success: false, error: data.error };
   };
 
-  const register = async (email, password, name, role) => {
-    const res = await fetch('http://localhost:5000/api/auth/register', {
+  const register = async (email, password, name) => {
+    const res = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, name, role })
+      body: JSON.stringify({ email, password, name }),
     });
-    
     const data = await res.json();
     if (res.ok) {
       localStorage.setItem('token', data.token);
@@ -68,7 +64,14 @@ export function AuthProvider({ children }) {
     return { success: false, error: data.error };
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      }).catch(() => {});
+    }
     localStorage.removeItem('token');
     setUser(null);
   };
