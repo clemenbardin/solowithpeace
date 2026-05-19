@@ -1,7 +1,15 @@
 const request = require('supertest');
+const mongoose = require('mongoose');
 const app = require('../app');
 
 describe('Activities Routes', () => {
+  let firstActivityId;
+
+  beforeEach(async () => {
+    const res = await request(app).get('/api/activities');
+    firstActivityId = String(res.body?.[0]?._id || res.body?.[0]?.id || '');
+  });
+
   describe('GET /api/activities', () => {
     it('retourne la liste des activités', async () => {
       const res = await request(app).get('/api/activities');
@@ -23,14 +31,15 @@ describe('Activities Routes', () => {
 
   describe('GET /api/activities/:id', () => {
     it('retourne une activité par id', async () => {
-      const res = await request(app).get('/api/activities/1');
+      const res = await request(app).get(`/api/activities/${firstActivityId}`);
       expect(res.status).toBe(200);
-      expect(res.body.id).toBe(1);
+      expect(res.body._id).toBe(firstActivityId);
       expect(res.body.title).toBeDefined();
     });
 
     it('retourne 404 pour un id inexistant', async () => {
-      const res = await request(app).get('/api/activities/99999');
+      const missingId = new mongoose.Types.ObjectId().toString();
+      const res = await request(app).get(`/api/activities/${missingId}`);
       expect(res.status).toBe(404);
     });
   });
