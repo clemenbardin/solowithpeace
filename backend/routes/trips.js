@@ -23,14 +23,14 @@ router.get('/', (req, res) => {
 
 router.get('/:id', (req, res) => {
   const trip = db.prepare('SELECT * FROM trips WHERE id = ?').get(req.params.id);
-  if (!trip) return res.status(404).json({ error: 'Voyage non trouvé' });
+  if (!trip) {return res.status(404).json({ error: 'Voyage non trouvé' });}
   res.json(trip);
 });
 
 router.post('/:id/join', verifyToken, (req, res) => {
   const trip = db.prepare('SELECT * FROM trips WHERE id = ?').get(req.params.id);
-  if (!trip) return res.status(404).json({ error: 'Voyage non trouvé' });
-  if (trip.spots_left <= 0) return res.status(400).json({ error: 'Plus de places disponibles' });
+  if (!trip) {return res.status(404).json({ error: 'Voyage non trouvé' });}
+  if (trip.spots_left <= 0) {return res.status(400).json({ error: 'Plus de places disponibles' });}
 
   db.prepare('UPDATE trips SET spots_left = spots_left - 1 WHERE id = ?').run(req.params.id);
   res.json({ message: 'Inscription confirmée', trip_id: trip.id });

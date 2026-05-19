@@ -1,378 +1,311 @@
 # SoloWithPeace — Plateforme de mise en relation pour voyageurs solos
 
-## Sommaire
+[![CI](https://github.com/VOTRE_ORG/solowithpeace/actions/workflows/ci.yml/badge.svg)](https://github.com/VOTRE_ORG/solowithpeace/actions/workflows/ci.yml)
+[![Docker](https://github.com/VOTRE_ORG/solowithpeace/actions/workflows/docker.yml/badge.svg)](https://github.com/VOTRE_ORG/solowithpeace/actions/workflows/docker.yml)
 
-1. [Équipe & répartition](#équipe--répartition)
-2. [Architecture technique](#architecture-technique)
-3. [Stack technologique](#stack-technologique)
-4. [Démarrage rapide](#démarrage-rapide)
-5. [Workflow Git](#workflow-git)
-6. [Pipeline CI/CD](#pipeline-cicd)
-7. [Migrations base de données](#migrations-base-de-données)
-8. [Tests](#tests)
-9. [Monitoring & observabilité](#monitoring--observabilité)
-10. [Déploiement](#déploiement)
-11. [Documentation](#documentation)
+**SoloWithPeace** est une plateforme sociale destinée aux voyageurs solos : connexions temporaires, voyages groupés, activités et témoignages.
+
+Stack : **Next.js 16** (frontend) + **Express 5** (backend) + **SQLite** (`better-sqlite3`)
 
 ---
 
-## Équipe & répartition
+## Structure du projet
 
-| Membre | Rôle principal | Responsabilités DevOps |
-|---|---|---|
-| **Jordan Jimenez** | Chef de projet / PO / Front-End | Git workflow, conventions de commits, documentation, tests E2E Playwright, présentation |
-| **Branis Kaci** | Back-End / Sécurité | Pipeline CI/CD, Docker backend, migrations DB, Prometheus, alerting, SLO |
-| **Clément Bardin** | Front-End / UX Design | Docker frontend, tests unitaires front, feature flags, dashboards Grafana, audits Lighthouse |
-
-Chaque membre doit pouvoir expliquer l'intégralité de la chaîne DevOps lors de la soutenance.
-
-## Stack technologique
-
-| Couche | Technologie | Version |
-|---|---|---|
-| Frontend | Next.js + TypeScript + Tailwind CSS | 14.x / 5.x / 3.x |
-| Backend | Node.js + Express + TypeScript | 20 LTS / 4.x / 5.x |
-| Temps réel | Socket.IO | 4.x |
-| Base de données | MongoDB + Mongoose | 7.x / 8.x |
-| Migrations | migrate-mongo | 11.x |
-| Conteneurisation | Docker + Docker Compose | 24.x / v2 |
-| CI/CD | GitHub Actions | — |
-| Tests | Jest + Supertest + Playwright | — |
-| Monitoring | Prometheus + Grafana + Alertmanager | latest |
-| Logs | Loki + Promtail (optionnel) | latest |
+```
+solowithpeace/
+├── .github/
+│   └── workflows/
+│       ├── ci.yml          # Pipeline CI (lint + tests + matrix)
+│       └── docker.yml      # Build & push images Docker
+├── .husky/
+│   └── pre-commit          # Hook pré-commit (lint-staged)
+├── backend/                # API Express
+│   ├── __tests__/          # Tests unitaires (Jest + Supertest)
+│   ├── db/
+│   ├── routes/
+│   ├── app.js
+│   ├── index.js
+│   ├── eslint.config.mjs   # ESLint strict backend
+│   ├── jest.config.js
+│   └── Dockerfile          # Multi-stage (dev / production)
+├── frontend/               # App Next.js
+│   ├── __tests__/          # Tests unitaires (Jest + RTL)
+│   ├── app/
+│   ├── context/
+│   ├── eslint.config.mjs   # ESLint strict (Next + règles custom)
+│   ├── jest.config.js
+│   └── Dockerfile          # Multi-stage (dev / builder / production)
+├── docker-compose.yml      # Environnement de développement complet
+├── package.json            # Husky + lint-staged (racine)
+└── README.md
+```
 
 ---
 
 ## Démarrage rapide
 
-### Pré-requis
+### Prérequis
 
-- Docker Desktop 24+ (ou Docker Engine + Compose v2)
-- Node.js 20.x (pour développement hors conteneur)
-- Git 2.40+
+- **Node.js** 20+ et **npm**
+- **Docker** et **Docker Compose** (pour la conteneurisation)
 
-### Lancement en local (recommandé)
-
-```bash
-# 1. Cloner le repo
-git clone https://github.com/<org>/solowithpeace.git
-cd solowithpeace
-
-# 2. Copier les variables d'environnement
-cp .env.example .env
-
-# 3. Lancer toute la stack (frontend + backend + mongo)
-docker compose up -d
-
-# 4. Appliquer les migrations
-docker compose exec backend npm run migrate:up
-
-# 5. Charger les données de test (optionnel)
-docker compose exec backend npm run seed
-```
-
-Une fois démarré :
-
-| Service | URL | Identifiants test |
-|---|---|---|
-| Frontend | http://localhost:3000 | `lea@test.fr` / `Test1234!` |
-| Backend API | http://localhost:3001/api | — |
-| Documentation API | http://localhost:3001/api/docs | — |
-| Mongo Express | http://localhost:8081 | `admin` / `admin` |
-| Grafana | http://localhost:3030 | `admin` / `admin` |
-| Prometheus | http://localhost:9090 | — |
-
-### Lancement du monitoring (optionnel)
+### Option 1 — Local (sans Docker)
 
 ```bash
-# Démarre Prometheus + Grafana + Alertmanager en plus
-docker compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
+# Backend
+cd backend
+npm install
+cp .env.example .env     # adapter JWT_SECRET
+npm run dev              # http://localhost:5000
+
+# Frontend (dans un autre terminal)
+cd frontend
+npm install
+npm run dev              # http://localhost:3000
 ```
 
-### Arrêt et nettoyage
+### Option 2 — Docker Compose (développement)
 
 ```bash
-docker compose down          # arrête les conteneurs
-docker compose down -v       # arrête et supprime les volumes (reset BDD)
+# Lancer l'ensemble de l'application
+docker-compose up --build
+
+# En arrière-plan
+docker-compose up -d --build
+
+# Voir les logs
+docker-compose logs -f
+
+# Arrêter
+docker-compose down
+
+# Arrêter et supprimer les volumes
+docker-compose down -v
 ```
+
+| Service  | URL                    |
+|----------|------------------------|
+| Frontend | http://localhost:3000  |
+| Backend  | http://localhost:5000  |
+| Health   | http://localhost:5000/api/health |
 
 ---
 
-## Workflow Git
+## Docker
 
-Nous suivons **GitHub Flow** : `main` est toujours déployable, toutes les modifications passent par des Pull Requests.
+### Dockerfiles multi-stage
 
-### Branches
+Les deux Dockerfiles utilisent une architecture **multi-stage** pour optimiser les images :
 
-- `main` — branche protégée, production-ready, déployée automatiquement
-- `develop` — branche d'intégration, déployée sur staging
-- `feat/<nom>` — nouvelle fonctionnalité (ex : `feat/matching-algorithm`)
-- `fix/<nom>` — correction de bug (ex : `fix/jwt-refresh-leak`)
-- `docs/<nom>` — documentation uniquement
-- `chore/<nom>` — tâches techniques (deps, config, etc.)
+**Backend** (`backend/Dockerfile`) :
 
-### Règles de protection sur `main`
+| Stage         | Description                          |
+|---------------|--------------------------------------|
+| `deps`        | Installation des dépendances de prod |
+| `development` | Hot-reload avec nodemon              |
+| `production`  | Image minimale, utilisateur non-root |
 
-- Pull Request obligatoire (pas de push direct)
-- **1 review approbative minimum** d'un autre membre
-- CI verte requise (lint + tests + build)
-- Pas de force-push autorisé
+**Frontend** (`frontend/Dockerfile`) :
 
-### Conventions de commits (Conventional Commits)
+| Stage         | Description                             |
+|---------------|-----------------------------------------|
+| `deps`        | Installation des dépendances            |
+| `builder`     | Build Next.js (`output: standalone`)    |
+| `development` | Hot-reload avec polling                 |
+| `production`  | Image standalone minimale, non-root     |
 
-```
-<type>(<scope>): <description courte>
+### Commandes Docker utiles
 
-[corps optionnel]
+```bash
+# Build uniquement le backend en production
+docker build --target production -t solowithpeace/backend:latest ./backend
 
-[footer optionnel]
-```
+# Build uniquement le frontend en production
+docker build --target production -t solowithpeace/frontend:latest ./frontend
 
-**Types utilisés :** `feat`, `fix`, `docs`, `test`, `refactor`, `chore`, `ci`, `perf`, `style`.
+# Inspecter les layers d'une image
+docker history solowithpeace/backend:latest
 
-**Exemples :**
-```
-feat(matching): implémente le scoring pondéré v1
-fix(auth): corrige la fuite de refresh token au logout
-docs(readme): ajoute la section monitoring
-ci(github): cache npm install entre les jobs
-test(e2e): ajoute le parcours signalement de profil
+# Supprimer les images inutilisées
+docker image prune -f
 ```
 
-### Cycle de contribution
+### Volumes persistants
 
-1. Créer une issue GitHub décrivant le besoin
-2. Créer une branche depuis `develop` : `git checkout -b feat/ma-feature`
-3. Commits atomiques (un commit = une intention)
-4. Ouvrir une Pull Request vers `develop` avec template rempli
-5. Attendre la CI verte + 1 review
-6. Squash & merge
-
-Voir [`CONTRIBUTING.md`](./CONTRIBUTING.md) pour les détails.
+| Volume                  | Contenu                         |
+|-------------------------|---------------------------------|
+| `sqlite_data`           | Base de données SQLite          |
+| `backend_node_modules`  | Dépendances backend             |
+| `frontend_node_modules` | Dépendances frontend            |
+| `frontend_next`         | Cache de build Next.js          |
 
 ---
 
-## Pipeline CI/CD
+## Variables d'environnement
 
-Voir [`/docs/cicd.md`](./docs/cicd.md) pour la documentation complète.
+### Backend (`backend/.env`)
 
-### Workflows GitHub Actions
-
-| Workflow | Déclencheur | Rôle |
-|---|---|---|
-| `ci.yml` | push sur toute branche + PR | lint, tests unitaires, tests d'intégration, build |
-| `docker-publish.yml` | push tag `v*.*.*` | build & push images sur GHCR |
-| `deploy-staging.yml` | push sur `develop` | déploiement automatique sur staging |
-| `deploy-prod.yml` | tag `v*.*.*` + approbation manuelle | déploiement production |
-| `lighthouse.yml` | PR vers `develop` ou `main` | audit performance + accessibilité |
-| `security.yml` | hebdomadaire + push `main` | scan SAST (Snyk) + dépendances |
-
-### Étapes du pipeline CI
-
-```mermaid
-flowchart LR
-    A[Push / PR] --> B[Lint]
-    B --> C[Type Check]
-    C --> D[Tests unitaires]
-    D --> E[Tests intégration]
-    E --> F[Build Docker]
-    F --> G{Branche?}
-    G -->|develop| H[Deploy staging]
-    G -->|tag v*| I[Deploy prod]
-    G -->|autre| J[Stop]
+```env
+PORT=5000
+JWT_SECRET=votre_secret_jwt_fort_ici
+NODE_ENV=development
 ```
 
----
+### Frontend
 
-## Migrations base de données
-
-Nous utilisons [`migrate-mongo`](https://github.com/seppevs/migrate-mongo) pour versionner les évolutions de schéma MongoDB.
-
-### Commandes
-
-```bash
-# Créer une nouvelle migration
-npm run migrate:create -- nom-de-la-migration
-
-# Appliquer toutes les migrations en attente
-npm run migrate:up
-
-# Annuler la dernière migration
-npm run migrate:down
-
-# Voir l'état des migrations
-npm run migrate:status
-```
-
-### Migrations actuelles
-
-| # | Nom | Description |
-|---|---|---|
-| 001 | `create-users-collection` | Création de la collection `users` + index unique sur `email` |
-| 002 | `create-trips-with-ttl` | Création de `trips` + TTL index sur `endDate + 30j` |
-| 003 | `create-reports-and-blocks` | Création des collections `reports` et `blocks` |
-
-Voir [`/backend/migrations/`](./backend/migrations) pour le code de chaque migration.
-
-### Script de seed
-
-```bash
-npm run seed              # Charge ~20 utilisateurs de test + 10 voyages + 5 matchings
-npm run seed:reset        # Vide la BDD avant de seed
-```
+Le frontend utilise un proxy Next.js (`next.config.ts`) qui redirige `/api/*` vers le backend. Aucune variable d'environnement n'est requise en développement local.
 
 ---
 
 ## Tests
 
-### Stratégie — Pyramide de tests
-
-```
-        /\
-       /E2\         3 parcours Playwright
-      /----\
-     /  IT  \       10+ tests d'intégration Supertest
-    /--------\
-   /   UT     \     Tests unitaires Jest (cible 70%)
-  /------------\
-```
-
-### Lancement
+### Lancer les tests
 
 ```bash
-# Tous les tests
+# Backend
+cd backend
+npm test                  # Tous les tests
+npm run test:coverage     # Avec rapport de couverture
+
+# Frontend
+cd frontend
 npm test
-
-# Tests unitaires uniquement
-npm run test:unit
-
-# Tests d'intégration (lance MongoDB en mémoire)
-npm run test:integration
-
-# Tests E2E (nécessite docker compose up)
-npm run test:e2e
-
-# Couverture
 npm run test:coverage
 ```
 
-### Cibles de couverture
+### Résultats actuels
 
-| Module | Cible | Statut |
-|---|---|---|
-| `services/matching/` | 80% | — |
-| `services/auth/` | 80% | — |
-| `routes/api/` | 70% | — |
-| **Global** | **70%** | — |
+| Projet   | Tests | Couverture lignes |
+|----------|-------|-------------------|
+| Backend  | 30/30 | **97%**           |
+| Frontend | 9/9   | **> 60%**         |
 
-### Parcours E2E
+### Architecture des tests
 
-1. **Inscription complète** — création de compte + onboarding 4 étapes
-2. **Matching** — déclaration de voyage + consultation des suggestions
-3. **Signalement** — envoi d'un message + signalement du profil
+**Backend** (`backend/__tests__/`) — Jest + Supertest :
+- `health.test.js` — endpoint `/api/health` et gestion 404
+- `auth.test.js` — register, login, logout, `/me`
+- `trips.test.js` — listing, filtres, détail, inscription
+- `activities.test.js` — listing, tri, détail
+- `testimonials.test.js` — listing, structure
 
----
+En mode `NODE_ENV=test`, la base de données utilise **SQLite `:memory:`** (isolation totale, aucun fichier créé).
 
-## Monitoring & observabilité
+**Frontend** (`frontend/__tests__/`) — Jest + React Testing Library :
+- `AuthContext.test.jsx` — initialisation, login, register, logout, restauration de session
 
-Voir [`/docs/monitoring.md`](./docs/monitoring.md) pour la configuration complète.
+### Couverture minimale
 
-### Golden Signals (Prometheus)
-
-| Signal | Métrique | Cible |
-|---|---|---|
-| **Latency** | `http_request_duration_seconds` (histogramme) | p95 < 400ms |
-| **Traffic** | `http_requests_total` (compteur) | — |
-| **Errors** | `http_requests_total{status=~"5.."}` | < 1% |
-| **Saturation** | `process_resident_memory_bytes`, `nodejs_eventloop_lag_seconds` | RAM < 85% |
-
-### Métriques métier
-
-- `swp_users_total` — nombre total d'utilisateurs
-- `swp_active_trips` — voyages actifs en ce moment
-- `swp_matchings_created_total` — matchings créés (compteur)
-- `swp_messages_sent_total` — messages envoyés (compteur)
-- `swp_reports_pending` — signalements en attente de modération
-
-### SLO définis
-
-| SLO | Cible | Window | Error Budget |
-|---|---|---|---|
-| **Disponibilité** | 99.5% | 30 jours rolling | 3h36 par mois |
-| **Latence API** | p95 < 400ms | 7 jours rolling | 5% des requêtes |
-
-### Alertes configurées
-
-| Alerte | Condition | Sévérité | Notification |
-|---|---|---|---|
-| `HighErrorRate` | taux 5xx > 5% sur 5min | critical | Discord |
-| `HighLatency` | p95 > 500ms sur 10min | warning | Discord |
-| `ServiceDown` | `up == 0` pendant 2min | critical | Discord |
-| `HighMemoryUsage` | RAM > 85% sur 10min | warning | Discord |
-| `ErrorBudgetBurn` | consommation > 10x sur 1h | critical | Discord |
-
-Chaque alerte dispose d'un [runbook](./docs/runbooks/) documentant la procédure de réponse.
+La couverture est vérifiée automatiquement. Le pipeline échoue si elle tombe en dessous de **60%** sur l'une de ces métriques : `statements`, `branches`, `functions`, `lines`.
 
 ---
 
-## Déploiement
+## Pipeline CI/CD
 
-### Environnements
+### GitHub Actions
 
-| Environnement | URL | Branche | Déploiement |
-|---|---|---|---|
-| **Local** | http://localhost:3000 | toutes | manuel (`docker compose up`) |
-| **Staging** | https://staging.solowithpeace.app | `develop` | automatique sur merge |
-| **Production** | https://solowithpeace.app | `main` (tag `v*.*.*`) | tag + approbation manuelle |
+| Workflow | Déclencheur | Jobs |
+|----------|-------------|------|
+| `ci.yml` | Push/PR sur `main`/`develop` | Lint backend, lint frontend, tests backend ×2 runtimes, tests frontend ×2 runtimes |
+| `docker.yml` | Push sur `main`, tags `v*.*.*` | Build & push images vers GHCR |
 
-### Stratégie de déploiement
+### Matrix de runtimes
 
-**Rolling deployment** via Docker Compose sur VPS :
-1. Pull de la nouvelle image depuis GHCR
-2. Démarrage du nouveau conteneur en parallèle
-3. Bascule du reverse proxy (Caddy/Nginx) sur le nouveau conteneur
-4. Arrêt de l'ancien conteneur après health check OK
+Les tests sont exécutés sur **Node.js 20.x** et **22.x** en parallèle. Le pipeline échoue si l'un des jobs est en erreur.
 
-### Procédure de rollback
+### Images Docker (GitHub Container Registry)
 
-```bash
-# Identifier le tag précédent
-git tag --sort=-v:refname | head -5
-
-# Re-déployer la version précédente
-git push origin v1.2.3:refs/tags/rollback-$(date +%s)
-# Le workflow deploy-prod.yml se déclenche automatiquement
+```
+ghcr.io/VOTRE_ORG/solowithpeace/backend:latest
+ghcr.io/VOTRE_ORG/solowithpeace/frontend:latest
 ```
 
-**RTO cible :** < 5 minutes pour un rollback frontend, < 20 minutes pour un rollback backend complet.
+Pour utiliser les images publiées :
 
-### Gestion des secrets
-
-- **Local :** fichier `.env` non versionné (cf `.env.example`)
-- **CI/CD :** GitHub Secrets (`MONGO_URI`, `JWT_SECRET`, `CLOUDINARY_*`, `DISCORD_WEBHOOK`...)
-- **Production :** variables d'environnement injectées par le runtime du VPS
-
----
-
-## Documentation
-
-| Document | Description |
-|---|---|
-| [`/docs/architecture.md`](./docs/architecture.md) | Architecture détaillée + diagrammes |
-| [`/docs/database.md`](./docs/database.md) | Schéma BDD + migrations |
-| [`/docs/cicd.md`](./docs/cicd.md) | Pipeline CI/CD complet |
-| [`/docs/monitoring.md`](./docs/monitoring.md) | Configuration Prometheus + Grafana |
-| [`/docs/runbooks/`](./docs/runbooks/) | Runbooks d'incidents par alerte |
-| [`/docs/api.md`](./docs/api.md) | Documentation API REST |
-| [`CONTRIBUTING.md`](./CONTRIBUTING.md) | Guide de contribution |
-| [`CHANGELOG.md`](./CHANGELOG.md) | Historique des versions |
+```bash
+docker pull ghcr.io/VOTRE_ORG/solowithpeace/backend:latest
+docker pull ghcr.io/VOTRE_ORG/solowithpeace/frontend:latest
+```
 
 ---
 
-## Licence
+## Qualité de code
 
-MIT — voir [`LICENSE`](./LICENSE).
+### ESLint
+
+```bash
+# Backend
+cd backend && npm run lint
+cd backend && npm run lint:fix
+
+# Frontend
+cd frontend && npm run lint
+cd frontend && npm run lint:fix
+```
+
+**Règles strictes activées (backend + frontend) :**
+- `no-unused-vars` — erreur sur les variables inutilisées
+- `eqeqeq` — utiliser `===` obligatoirement
+- `no-var` — interdire `var`, utiliser `const`/`let`
+- `prefer-const` — préférer `const`
+- `no-trailing-spaces` — pas d'espaces en fin de ligne
+- `no-multiple-empty-lines` — 1 ligne vide maximum
+
+### Pre-commit hooks (Husky + lint-staged)
+
+À l'installation (`npm install` à la racine), Husky configure automatiquement un hook `pre-commit` qui exécute ESLint sur les fichiers stagés avant chaque commit.
+
+```bash
+# Installation à la racine
+npm install
+
+# Forcer l'initialisation manuelle si nécessaire
+npx husky init
+```
+
+### Standards de code
+
+- **CommonJS** côté backend (`require`/`module.exports`)
+- **ES Modules** + **TypeScript** côté frontend
+- Nommage : `camelCase` pour les variables/fonctions, `PascalCase` pour les composants React
+- Commits : message en impératif, 72 caractères max par ligne
+- Pas de secrets dans le code : utiliser `.env` (ignoré par git)
 
 ---
 
-*SoloWithPeace · Promotion 2026 · Jordan Jimenez · Branis Kaci · Clément Bardin*
+## API REST
+
+| Méthode | Endpoint | Auth |
+|---------|----------|------|
+| `GET` | `/api/health` | Non |
+| `POST` | `/api/auth/register` | Non |
+| `POST` | `/api/auth/login` | Non |
+| `POST` | `/api/auth/logout` | Non |
+| `GET` | `/api/auth/me` | Bearer JWT |
+| `GET` | `/api/trips` | Non |
+| `GET` | `/api/trips/:id` | Non |
+| `POST` | `/api/trips/:id/join` | Bearer JWT |
+| `GET` | `/api/activities` | Non |
+| `GET` | `/api/activities/:id` | Non |
+| `GET` | `/api/testimonials` | Non |
+
+---
+
+## Technologies utilisées
+
+| Couche | Technologies |
+|--------|-------------|
+| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS v4 |
+| Backend | Node.js, Express 5, better-sqlite3, JWT, bcryptjs |
+| Tests | Jest, Supertest, React Testing Library |
+| CI/CD | GitHub Actions |
+| Conteneurs | Docker (multi-stage), Docker Compose |
+| Qualité | ESLint v9, Husky, lint-staged |
+
+---
+
+## Auteurs
+
+- Jordan Jimenez
+- Branis Kaci
+- Clément Bardin
