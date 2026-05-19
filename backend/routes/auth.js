@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const db = require('../db/database');
+const User = require('../models/User');
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'swp_jwt_secret_change_in_prod';
@@ -31,7 +31,7 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Le mot de passe doit faire au moins 6 caractères' });
     }
 
-    const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email.toLowerCase().trim());
+    const existing = await User.findOne({ email: email.toLowerCase().trim() });
     if (existing) {
       return res.status(400).json({ error: 'Cet email est déjà utilisé' });
     }
@@ -39,17 +39,19 @@ router.post('/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const initials = name.trim().split(/\s+/).map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
-    const result = db.prepare(
-      'INSERT INTO users (email, password, name, role, avatar_initials) VALUES (?, ?, ?, ?, ?)'
-    ).run(email.toLowerCase().trim(), hashedPassword, name.trim(), 'Voyageur', initials);
+    const newUser = await User.create({
+      email: email.toLowerCase().trim(),
+      password: hashedPassword,
+      name: name.trim(),
+      role: 'Voyageur',
+      avatar_initials: initials,
+    });
 
-    const newUser = { id: result.lastInsertRowid, email: email.toLowerCase().trim(), name: name.trim(), role: 'Voyageur', avatar_initials: initials };
-    const token = jwt.sign({ id: newUser.id, email: newUser.email, role: newUser.role }, JWT_SECRET, { expiresIn: '7d' });
-
-    res.status(201).json({ token, user: newUser });
+    const token = jwt.sign({ id: newUser._id, email: newUser.email, role: newUser.role }, JWT_SECRET, { expiresIn: '7d' });
+    res.status(201).json({ token, user: { id: newUser._id, email: newUser.email, name: newUser.name, role: newUser.role, avatar_initials: newUser.avatar_initials } });
   } catch (err) {
     console.error('[register]', err);
-    res.status(500).json({ error: 'Erreur lors de l\'inscription' });
+    res.status(500).json({ error: "Erreur lors de l'inscription" });
   }
 });
 
@@ -61,7 +63,7 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Email et mot de passe requis' });
     }
 
-    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email.toLowerCase().trim());
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
     if (!user) {
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
     }
@@ -71,8 +73,8 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
     }
 
-    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role, avatar_initials: user.avatar_initials } });
+    const token = jwt.sign({ id: user._id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, user: { id: user._id, email: user.email, name: user.name, role: user.role, avatar_initials: user.avatar_initials } });
   } catch (err) {
     console.error('[login]', err);
     res.status(500).json({ error: 'Erreur lors de la connexion' });
@@ -83,12 +85,15 @@ router.post('/logout', (req, res) => {
   res.json({ message: 'Déconnexion réussie' });
 });
 
-router.get('/me', verifyToken, (req, res) => {
-  const user = db.prepare(
-    'SELECT id, email, name, role, avatar_initials, created_at FROM users WHERE id = ?'
-  ).get(req.user.id);
-  if (!user) {return res.status(404).json({ error: 'Utilisateur non trouvé' });}
-  res.json(user);
+router.get('/me', verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    res.json(user);
+  } catch (err) {
+    console.error('[me]', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
 });
 
 module.exports = { router, verifyToken };

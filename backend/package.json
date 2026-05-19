@@ -6,19 +6,16 @@
   "scripts": {
     "dev": "node ./node_modules/nodemon/bin/nodemon.js index.js",
     "start": "node index.js",
-    "test": "jest",
-    "test:coverage": "jest --coverage",
-    "test:ci": "jest --coverage --ci --forceExit",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "seed": "node db/seed.js",
+    "seed:reset": "node db/seed.js --reset"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
-    "better-sqlite3": "^12.10.0",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.3"
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^8.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
