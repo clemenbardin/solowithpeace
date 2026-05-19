@@ -44,6 +44,7 @@ export default function DashboardPage() {
         .finally(() => setTripsLoading(false));
     }
   }, [user]);
+  
 
   const handleLogout = async () => {
     await logout();
