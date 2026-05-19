@@ -1,4 +1,5 @@
 const nextConfig = {
+  output: 'standalone',
   rewrites: async () => [
     {
       source: '/api/:path*',
