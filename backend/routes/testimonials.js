@@ -1,13 +1,16 @@
 const express = require('express');
-const db = require('../db/database');
+const Testimonial = require('../models/Testimonial');
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
-  const testimonials = db.prepare(
-    'SELECT * FROM testimonials ORDER BY created_at ASC'
-  ).all();
-  res.json(testimonials);
+router.get('/', async (req, res) => {
+  try {
+    const testimonials = await Testimonial.find().sort({ createdAt: 1 });
+    res.json(testimonials);
+  } catch (err) {
+    console.error('[testimonials GET /]', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
 });
 
 module.exports = router;

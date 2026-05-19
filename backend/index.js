@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
+const mongoose = require('mongoose');
 require('dotenv').config();
+const connectDB = require('./db/connection');
 
 const { router: authRouter } = require('./routes/auth');
 const tripsRouter = require('./routes/trips');
@@ -14,7 +16,11 @@ app.use(cors());
 app.use(express.json());
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+  res.json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+  });
 });
 
 app.use('/api/auth', authRouter);
@@ -26,6 +32,13 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Route non trouvée' });
 });
 
-app.listen(PORT, () => {
-  console.log(`[SoloWithPeace] Backend démarré sur http://localhost:${PORT}`);
-});
+connectDB()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`[SoloWithPeace] Backend démarré sur http://localhost:${PORT}`);
+    });
+  })
+  .catch(err => {
+    console.error('[SoloWithPeace] Erreur de connexion MongoDB:', err);
+    process.exit(1);
+  });

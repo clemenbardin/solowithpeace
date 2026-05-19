@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 
 type Trip = {
-  id: number;
+  id: string;
   title: string;
   description: string;
   destination: string;
@@ -19,7 +19,7 @@ type Trip = {
 };
 
 type Activity = {
-  id: number;
+  id: string;
   title: string;
   description: string;
   icon_type: string;
@@ -28,7 +28,7 @@ type Activity = {
 };
 
 type Testimonial = {
-  id: number;
+  id: string;
   author_name: string;
   author_initials: string;
   author_color: string;
