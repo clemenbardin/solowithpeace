@@ -12,7 +12,7 @@ router.get('/', (req, res) => {
 
 router.get('/:id', (req, res) => {
   const activity = db.prepare('SELECT * FROM activities WHERE id = ?').get(req.params.id);
-  if (!activity) return res.status(404).json({ error: 'Activité non trouvée' });
+  if (!activity) {return res.status(404).json({ error: 'Activité non trouvée' });}
   res.json(activity);
 });
 

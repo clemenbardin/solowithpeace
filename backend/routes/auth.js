@@ -87,7 +87,7 @@ router.get('/me', verifyToken, (req, res) => {
   const user = db.prepare(
     'SELECT id, email, name, role, avatar_initials, created_at FROM users WHERE id = ?'
   ).get(req.user.id);
-  if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' });
+  if (!user) {return res.status(404).json({ error: 'Utilisateur non trouvé' });}
   res.json(user);
 });
 

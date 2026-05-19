@@ -1,0 +1,17 @@
+{
+  "name": "solowithpeace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Monorepo SoloWithPeace — pre-commit hooks & lint-staged",
+  "scripts": {
+    "prepare": "husky",
+    "lint:backend": "cd backend && npm run lint",
+    "lint:frontend": "cd frontend && npm run lint",
+    "test:backend": "cd backend && npm run test:ci",
+    "test:frontend": "cd frontend && npm run test:ci"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.2"
+  }
+}
