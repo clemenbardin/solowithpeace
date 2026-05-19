@@ -1,4 +1,4 @@
-# SoloWithPeace
+# SoloWithPeace — Plateforme de mise en relation pour voyageurs solos
 
 [![CI](https://github.com/VOTRE_ORG/solowithpeace/actions/workflows/ci.yml/badge.svg)](https://github.com/VOTRE_ORG/solowithpeace/actions/workflows/ci.yml)
 [![Docker](https://github.com/VOTRE_ORG/solowithpeace/actions/workflows/docker.yml/badge.svg)](https://github.com/VOTRE_ORG/solowithpeace/actions/workflows/docker.yml)
