@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 
 type Trip = {
-  id: number;
+  id: string;
   title: string;
   description: string;
   destination: string;
@@ -19,7 +19,7 @@ type Trip = {
 };
 
 type Activity = {
-  id: number;
+  id: string;
   title: string;
   description: string;
   icon_type: string;
@@ -28,13 +28,20 @@ type Activity = {
 };
 
 type Testimonial = {
-  id: number;
+  id: string;
   author_name: string;
   author_initials: string;
   author_color: string;
   quote_title: string;
   quote_body: string;
   subtitle: string;
+};
+
+type FeatureFlag = {
+  key: string;
+  name: string;
+  description: string;
+  enabled: boolean;
 };
 
 const ICON_COLORS: Record<string, string> = {
@@ -79,12 +86,16 @@ function formatDate(dateStr: string) {
 }
 
 export default function Home() {
-  const { user, logout, loading } = useAuth();
+  const auth = useAuth() as { user?: any; logout?: () => Promise<void>; loading?: boolean } | null;
+  const user = auth?.user;
+  const logout = auth?.logout;
+  const loading = auth?.loading;
   const router = useRouter();
 
   const [trips, setTrips] = useState<Trip[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [featureFlags, setFeatureFlags] = useState<Record<string, boolean>>({});
   const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
@@ -92,11 +103,15 @@ export default function Home() {
       fetch('/api/trips?limit=3').then((r) => r.json()),
       fetch('/api/activities').then((r) => r.json()),
       fetch('/api/testimonials').then((r) => r.json()),
+      fetch('/api/flags').then((r) => r.json()),
     ])
-      .then(([t, a, tm]) => {
+      .then(([t, a, tm, flags]) => {
         setTrips(Array.isArray(t) ? t.slice(0, 3) : []);
         setActivities(Array.isArray(a) ? a : []);
         setTestimonials(Array.isArray(tm) ? tm.slice(0, 4) : []);
+        if (Array.isArray(flags)) {
+          setFeatureFlags(Object.fromEntries(flags.map((flag: FeatureFlag) => [flag.key, flag.enabled])));
+        }
       })
       .catch(console.error)
       .finally(() => setDataLoading(false));
@@ -127,6 +142,15 @@ export default function Home() {
             <a className="hover:text-zinc-700 transition-colors" href="#activites">Activités</a>
             <a className="hover:text-zinc-700 transition-colors" href="#temoignages">Témoignages</a>
           </nav>
+
+          {user?.role === 'Admin' && (
+            <Link
+              href="/admin/feature-flags"
+              className="hidden sm:inline-flex items-center gap-2 rounded-full border border-emerald-500 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors"
+            >
+              Administration
+            </Link>
+          )}
 
           {!loading && (
             <div className="flex items-center gap-2">
@@ -172,7 +196,7 @@ export default function Home() {
       <main className="flex flex-col gap-10 pb-16">
         {/* Hero */}
         <section className="mx-auto max-w-6xl px-4 pt-6">
-          <div className="relative overflow-hidden rounded-3xl border border-zinc-200 bg-gradient-to-br from-amber-500/15 via-sky-500/10 to-emerald-500/15 shadow-sm">
+          <div className="relative overflow-hidden rounded-3xl border border-zinc-200 bg-linear-to-br from-amber-500/15 via-sky-500/10 to-emerald-500/15 shadow-sm">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,.75),transparent_45%),radial-gradient(circle_at_80%_30%,rgba(255,255,255,.45),transparent_50%)]" />
             <div className="relative grid gap-8 p-6 sm:p-10 lg:grid-cols-2 lg:items-center">
               <div>
@@ -214,7 +238,7 @@ export default function Home() {
               </div>
 
               <div className="relative">
-                <div className="aspect-[4/3] overflow-hidden rounded-2xl border border-white/60 bg-gradient-to-br from-amber-600/25 via-sky-500/20 to-emerald-500/25 shadow-sm">
+                <div className="aspect-4/3 overflow-hidden rounded-2xl border border-white/60 bg-linear-to-br from-amber-600/25 via-sky-500/20 to-emerald-500/25 shadow-sm">
                   <div className="h-full w-full bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,.55),transparent_50%),linear-gradient(135deg,rgba(255,255,255,.18),transparent_60%)] flex items-center justify-center">
                     <div className="text-center select-none">
                       <div className="text-5xl font-black text-zinc-900/10">SWP</div>
@@ -230,6 +254,27 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        {featureFlags.show_exclusive_trips && (
+          <section className="mx-auto max-w-6xl px-4">
+            <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-6 text-emerald-900 shadow-sm">
+              <p className="text-sm font-semibold uppercase tracking-[0.2em]">Offre exclusive</p>
+              <h2 className="mt-3 text-2xl font-extrabold">Voyages exclusifs maintenant visibles</h2>
+              <p className="mt-2 text-sm text-emerald-700">
+                Cette section est contrôlée par un feature flag et propose des promotions prioritaires pour les membres.
+              </p>
+            </div>
+          </section>
+        )}
+
+        {featureFlags.enable_testimonials_banner && (
+          <section className="mx-auto max-w-6xl px-4">
+            <div className="rounded-3xl border border-sky-200 bg-sky-50 p-5 text-sky-900 shadow-sm">
+              <p className="text-sm font-semibold">Nouveau</p>
+              <p className="mt-2 text-base">Les témoignages sont maintenant mis en avant par un badge dynamique.</p>
+            </div>
+          </section>
+        )}
 
         {/* Voyages */}
         <section id="voyages" className="mx-auto w-full max-w-6xl px-4">
@@ -256,7 +301,7 @@ export default function Home() {
                 ))
               : trips.map((trip) => (
                   <article key={trip.id} className="overflow-hidden rounded-3xl border border-zinc-200 bg-white/70 shadow-sm hover:shadow-md transition-shadow group">
-                    <div className={`h-36 bg-gradient-to-br ${trip.gradient || 'from-amber-500/30 to-sky-500/20'} relative`}>
+                    <div className={`h-36 bg-linear-to-br ${trip.gradient || 'from-amber-500/30 to-sky-500/20'} relative`}>
                       <div className="absolute top-3 left-3">
                         <span className="rounded-full bg-white/70 border border-white/60 px-2.5 py-1 text-xs font-semibold backdrop-blur">
                           {trip.category}
@@ -376,7 +421,7 @@ export default function Home() {
         {/* CTA inscription */}
         {!user && !loading && (
           <section className="mx-auto w-full max-w-6xl px-4">
-            <div className="rounded-3xl border border-zinc-200 bg-gradient-to-br from-zinc-900 to-zinc-800 px-8 py-10 text-white shadow-sm text-center">
+            <div className="rounded-3xl border border-zinc-200 bg-linear-to-br from-zinc-900 to-zinc-800 px-8 py-10 text-white shadow-sm text-center">
               <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">Prêt(e) à voyager autrement ?</h2>
               <p className="mt-3 text-zinc-400 max-w-md mx-auto">Rejoignez des milliers de voyageurs solos et créez des souvenirs inoubliables.</p>
               <div className="mt-7 flex flex-col sm:flex-row gap-3 justify-center">

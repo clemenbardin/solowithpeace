@@ -1,39 +1,44 @@
 const express = require('express');
-const db = require('../db/database');
+const Trip = require('../models/Trip');
 const { verifyToken } = require('./auth');
 
 const router = express.Router();
 
-router.get('/', (req, res) => {
-  const { category, limit = 20 } = req.query;
-  let query = 'SELECT * FROM trips';
-  const params = [];
-
-  if (category) {
-    query += ' WHERE category = ?';
-    params.push(category);
+router.get('/', async (req, res) => {
+  try {
+    const { category, limit = 20 } = req.query;
+    const filter = category ? { category } : {};
+    const trips = await Trip.find(filter).sort({ createdAt: -1 }).limit(Number(limit));
+    res.json(trips);
+  } catch (err) {
+    console.error('[trips GET /]', err);
+    res.status(500).json({ error: 'Erreur serveur' });
   }
-
-  query += ' ORDER BY created_at DESC LIMIT ?';
-  params.push(Number(limit));
-
-  const trips = db.prepare(query).all(...params);
-  res.json(trips);
 });
 
-router.get('/:id', (req, res) => {
-  const trip = db.prepare('SELECT * FROM trips WHERE id = ?').get(req.params.id);
-  if (!trip) return res.status(404).json({ error: 'Voyage non trouvé' });
-  res.json(trip);
+router.get('/:id', async (req, res) => {
+  try {
+    const trip = await Trip.findById(req.params.id);
+    if (!trip) return res.status(404).json({ error: 'Voyage non trouvé' });
+    res.json(trip);
+  } catch (err) {
+    console.error('[trips GET /:id]', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
 });
 
-router.post('/:id/join', verifyToken, (req, res) => {
-  const trip = db.prepare('SELECT * FROM trips WHERE id = ?').get(req.params.id);
-  if (!trip) return res.status(404).json({ error: 'Voyage non trouvé' });
-  if (trip.spots_left <= 0) return res.status(400).json({ error: 'Plus de places disponibles' });
+router.post('/:id/join', verifyToken, async (req, res) => {
+  try {
+    const trip = await Trip.findById(req.params.id);
+    if (!trip) return res.status(404).json({ error: 'Voyage non trouvé' });
+    if (trip.spots_left <= 0) return res.status(400).json({ error: 'Plus de places disponibles' });
 
-  db.prepare('UPDATE trips SET spots_left = spots_left - 1 WHERE id = ?').run(req.params.id);
-  res.json({ message: 'Inscription confirmée', trip_id: trip.id });
+    await Trip.findByIdAndUpdate(req.params.id, { $inc: { spots_left: -1 } });
+    res.json({ message: 'Inscription confirmée', trip_id: trip._id });
+  } catch (err) {
+    console.error('[trips POST /:id/join]', err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
 });
 
 module.exports = router;
