@@ -30,14 +30,24 @@ ENV NEXT_TELEMETRY_DISABLED=1
 WORKDIR /app
 
 RUN addgroup --system --gid 1001 nodejs \
- && adduser  --system --uid 1001 nextjs
+ && adduser --system --uid 1001 nextjs
 
+# Copie les fichiers publics
 COPY --from=builder /app/public ./public
+
+# Copie le standalone - CORRECTION ICI
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+
+# Copie les fichiers statiques
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Vérifie que server.js existe (debug)
+RUN ls -la
 
 USER nextjs
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
+
+# Le server.js est à la racine du dossier standalone
 CMD ["node", "server.js"]
