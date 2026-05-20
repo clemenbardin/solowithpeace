@@ -47,7 +47,7 @@ router.post('/register', async (req, res) => {
       avatar_initials: initials,
     });
 
-    const token = jwt.sign({ id: newUser._id, email: newUser.email, role: newUser.role }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ id: newUser._id.toString(), email: newUser.email, role: newUser.role }, JWT_SECRET, { expiresIn: '7d' });
     res.status(201).json({ token, user: { id: newUser._id, email: newUser.email, name: newUser.name, role: newUser.role, avatar_initials: newUser.avatar_initials } });
   } catch (err) {
     console.error('[register]', err);
@@ -73,7 +73,7 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
     }
 
-    const token = jwt.sign({ id: user._id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ id: user._id.toString(), email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, user: { id: user._id, email: user.email, name: user.name, role: user.role, avatar_initials: user.avatar_initials } });
   } catch (err) {
     console.error('[login]', err);
@@ -87,7 +87,13 @@ router.post('/logout', (req, res) => {
 
 router.get('/me', verifyToken, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-password');
+    let user = null;
+    if (req.user?.id) {
+      user = await User.findById(req.user.id).select('-password');
+    }
+    if (!user && req.user?.email) {
+      user = await User.findOne({ email: req.user.email }).select('-password');
+    }
     if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' });
     res.json(user);
   } catch (err) {
@@ -96,4 +102,13 @@ router.get('/me', verifyToken, async (req, res) => {
   }
 });
 
-module.exports = { router, verifyToken };
+const verifyAdmin = (req, res, next) => {
+  verifyToken(req, res, () => {
+    if (req.user.role !== 'Admin') {
+      return res.status(403).json({ error: 'Accès administrateur requis' });
+    }
+    next();
+  });
+};
+
+module.exports = { router, verifyToken, verifyAdmin };

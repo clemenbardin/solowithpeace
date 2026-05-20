@@ -5,7 +5,7 @@
 
 **SoloWithPeace** est une plateforme sociale destinée aux voyageurs solos : connexions temporaires, voyages groupés, activités et témoignages.
 
-Stack : **Next.js 16** (frontend) + **Express 5** (backend) + **SQLite** (`better-sqlite3`)
+Stack : **Next.js 16** (frontend) + **Express 5** (backend) + **MongoDB** / **Mongoose**
 
 ---
 
@@ -188,8 +188,9 @@ npm run test:coverage
 - `trips.test.js` — listing, filtres, détail, inscription
 - `activities.test.js` — listing, tri, détail
 - `testimonials.test.js` — listing, structure
+- `flags.test.js` — feature flags, lecture et administration
 
-En mode `NODE_ENV=test`, la base de données utilise **SQLite `:memory:`** (isolation totale, aucun fichier créé).
+En mode `NODE_ENV=test`, la base de données utilise **MongoDB Memory Server** pour une isolation complète et des tests d'intégration réels.
 
 **Frontend** (`frontend/__tests__/`) — Jest + React Testing Library :
 - `AuthContext.test.jsx` — initialisation, login, register, logout, restauration de session
@@ -208,6 +209,7 @@ La couverture est vérifiée automatiquement. Le pipeline échoue si elle tombe 
 |----------|-------------|------|
 | `ci.yml` | Push/PR sur `main`/`develop` | Lint backend, lint frontend, tests backend ×2 runtimes, tests frontend ×2 runtimes |
 | `docker.yml` | Push sur `main`, tags `v*.*.*` | Build & push images vers GHCR |
+| `deploy-staging.yml` | Push sur `develop` | Build & publish staging Docker images |
 
 ### Matrix de runtimes
 
