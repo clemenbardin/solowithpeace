@@ -57,7 +57,7 @@ services:
       - frontend_next:/app/.next
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_API_URL=http://backend:5000
+      - BACKEND_URL=http://backend:5000
       - WATCHPACK_POLLING=true
       - CHOKIDAR_USEPOLLING=true
       - NEXT_WEBPACK_USEPOLLING=true
