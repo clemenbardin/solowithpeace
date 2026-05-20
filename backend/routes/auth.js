@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { authSuccessTotal } = require('../metrics');
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'swp_jwt_secret_change_in_prod';
@@ -72,6 +73,7 @@ router.post('/login', async (req, res) => {
     if (!isValid) {
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
     }
+    authSuccessTotal.inc();
 
     const token = jwt.sign({ id: user._id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, user: { id: user._id, email: user.email, name: user.name, role: user.role, avatar_initials: user.avatar_initials } });
@@ -88,7 +90,7 @@ router.post('/logout', (req, res) => {
 router.get('/me', verifyToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
-    if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    if (!user) {return res.status(404).json({ error: 'Utilisateur non trouvé' });}
     res.json(user);
   } catch (err) {
     console.error('[me]', err);

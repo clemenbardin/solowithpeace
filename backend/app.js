@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const { register, httpRequestsTotal, httpRequestsDurationMs } = require('./metrics');
 
 const { router: authRouter } = require('./routes/auth');
 const tripsRouter = require('./routes/trips');
@@ -7,6 +8,21 @@ const activitiesRouter = require('./routes/activities');
 const testimonialsRouter = require('./routes/testimonials');
 
 const app = express();
+
+app.use((req, res, next) => {
+  const end = httpRequestsDurationMs.startTimer();
+  res.on('finish', () => {
+    const route = req.route?.path || req.path;
+    httpRequestsTotal.inc({ method: req.method, route, status_code: res.statusCode });
+    end({ method: req.method, route, status_code: res.statusCode });
+  });
+  next();
+});
+
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', register.contentType);
+  res.end(await register.metrics());
+});
 
 app.use(cors());
 app.use(express.json());
