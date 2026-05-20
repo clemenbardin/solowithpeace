@@ -12,9 +12,9 @@ export class RegisterPage {
   }
 
   async register(email: string, password: string, name: string) {
-    await this.page.fill('input[name="email"]', email);
-    await this.page.fill('input[name="password"]', password);
-    await this.page.fill('input[name="name"]', name);
+    await this.page.fill('#email', email);
+    await this.page.fill('#password', password);
+    await this.page.fill('#name', name);
     await this.page.click('button[type="submit"]');
   }
 }
