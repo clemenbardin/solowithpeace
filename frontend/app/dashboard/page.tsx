@@ -18,15 +18,26 @@ type Trip = {
   gradient: string;
 };
 
+type FeatureFlag = {
+  key: string;
+  name: string;
+  description: string;
+  enabled: boolean;
+};
+
 function formatDate(dateStr: string) {
   if (!dateStr) return '';
   return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 export default function DashboardPage() {
-  const { user, logout, loading } = useAuth();
+  const auth = useAuth() as { user?: any; logout?: () => Promise<void>; loading?: boolean } | null;
+  const user = auth?.user;
+  const logout = auth?.logout;
+  const loading = auth?.loading;
   const router = useRouter();
   const [trips, setTrips] = useState<Trip[]>([]);
+  const [featureFlags, setFeatureFlags] = useState<Record<string, boolean>>({});
   const [tripsLoading, setTripsLoading] = useState(true);
 
   useEffect(() => {
@@ -37,6 +48,15 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (user) {
+      fetch('/api/flags')
+        .then((r) => r.json())
+        .then((flags) => {
+          if (Array.isArray(flags)) {
+            setFeatureFlags(Object.fromEntries(flags.map((flag: FeatureFlag) => [flag.key, flag.enabled])));
+          }
+        })
+        .catch(console.error);
+
       fetch('/api/trips')
         .then((r) => r.json())
         .then((data) => setTrips(Array.isArray(data) ? data : []))
@@ -46,7 +66,7 @@ export default function DashboardPage() {
   }, [user]);
 
   const handleLogout = async () => {
-    await logout();
+    await logout?.();
     router.push('/');
   };
 
@@ -86,6 +106,14 @@ export default function DashboardPage() {
           </Link>
 
           <div className="flex items-center gap-2">
+            {user.role === 'Admin' && (
+              <a
+                href="/admin/feature-flags"
+                className="hidden sm:inline-flex items-center gap-2 rounded-full border border-emerald-500 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors"
+              >
+                Administration
+              </a>
+            )}
             <div className="hidden sm:flex items-center gap-2 rounded-full border border-zinc-200 bg-white/70 px-3 py-1.5">
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-900 text-white text-xs font-bold">
                 {user.avatar_initials || user.name?.[0]?.toUpperCase()}
@@ -104,9 +132,21 @@ export default function DashboardPage() {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-8 flex flex-col gap-8">
+        {featureFlags.show_exclusive_trips && (
+          <section className="rounded-3xl border border-emerald-200 bg-emerald-50 p-6 shadow-sm">
+            <div className="text-emerald-900">
+              <p className="text-sm font-semibold uppercase tracking-[0.2em]">Offre exclusive</p>
+              <h2 className="mt-3 text-2xl font-extrabold">Voyages exclusifs activés</h2>
+              <p className="mt-2 text-sm leading-6">
+                Ce contenu est contrôlé par un feature flag. Les voyages affichés sont désormais présentés en priorité.
+              </p>
+            </div>
+          </section>
+        )}
+
         {/* Profil hero */}
         <section>
-          <div className="relative overflow-hidden rounded-3xl border border-zinc-200 bg-gradient-to-br from-amber-500/15 via-sky-500/10 to-emerald-500/15 shadow-sm">
+          <div className="relative overflow-hidden rounded-3xl border border-zinc-200 bg-linear-to-br from-amber-500/15 via-sky-500/10 to-emerald-500/15 shadow-sm">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_50%,rgba(255,255,255,.7),transparent_50%)]" />
             <div className="relative flex flex-col sm:flex-row sm:items-center gap-6 p-6 sm:p-10">
               <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-white text-2xl font-black shadow-sm">
@@ -164,7 +204,7 @@ export default function DashboardPage() {
                 ))
               : trips.map((trip) => (
                   <article key={trip.id} className="overflow-hidden rounded-3xl border border-zinc-200 bg-white/70 shadow-sm hover:shadow-md transition-all group">
-                    <div className={`h-28 bg-gradient-to-br ${trip.gradient || 'from-amber-500/30 to-sky-500/20'} relative`}>
+                    <div className={`h-28 bg-linear-to-br ${trip.gradient || 'from-amber-500/30 to-sky-500/20'} relative`}>
                       <div className="absolute top-3 left-3">
                         <span className="rounded-full bg-white/70 border border-white/60 px-2.5 py-1 text-xs font-semibold backdrop-blur">
                           {trip.category}

@@ -1,0 +1,69 @@
+groups:
+  - name: solowithpeace
+    rules:
+
+      # Alerte 1 : Service down
+      - alert: BackendDown
+        expr: up{job="solowithpeace-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backend SoloWithPeace indisponible"
+          description: "Le backend ne répond plus depuis 1 minute."
+          runbook: "https://github.com/ton-repo/docs/runbooks/backend-down.md"
+
+      # Alerte 2 : Error rate élevé (symptôme, pas cause)
+      - alert: HighErrorRate
+        expr: |
+          rate(http_requests_total{status_code=~"5.."}[5m])
+          / rate(http_requests_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Taux d'erreurs > 5%"
+          description: "{{ $value | humanizePercentage }} des requêtes retournent une erreur 5xx."
+          runbook: "https://github.com/ton-repo/docs/runbooks/high-error-rate.md"
+
+      # Alerte 3 : Latence élevée (P95)
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(0.95,
+            rate(http_request_duration_ms_bucket[5m])
+          ) > 500
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "P95 latence > 500ms"
+          description: "95% des requêtes prennent plus de {{ $value }}ms."
+          runbook: "https://github.com/ton-repo/docs/runbooks/high-latency.md"
+
+      # Alerte 4 : Saturation mémoire
+      - alert: HighMemoryUsage
+        expr: |
+          process_resident_memory_bytes{job="solowithpeace-backend"}
+          / 1024 / 1024 > 400
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Mémoire backend > 400MB"
+          description: "Le process backend consomme {{ $value }}MB de RAM."
+          runbook: "https://github.com/ton-repo/docs/runbooks/memory-saturation.md"
+
+      # Alerte 5 : Error budget critique (SLO)
+      - alert: ErrorBudgetCritical
+        expr: |
+          1 - (
+            rate(http_requests_total{status_code!~"5.."}[30d])
+            / rate(http_requests_total[30d])
+          ) > 0.001
+        for: 1h
+        labels:
+          severity: critical
+        annotations:
+          summary: "Error budget épuisé à plus de 50%"
+          description: "Le SLO de disponibilité de 99.9% est en danger."
+          runbook: "https://github.com/ton-repo/docs/runbooks/error-budget.md"

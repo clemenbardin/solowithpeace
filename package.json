@@ -13,5 +13,8 @@
   "devDependencies": {
     "husky": "^9.1.7",
     "lint-staged": "^15.5.2"
+  },
+  "dependencies": {
+    "prom-client": "^15.1.3"
   }
 }
