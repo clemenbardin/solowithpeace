@@ -1,5 +1,8 @@
+const path = require('path');
+
 const nextConfig = {
   output: 'standalone',
+  outputFileTracingRoot: path.join(__dirname, '../'),
   rewrites: async () => [
     {
       source: '/api/:path*',

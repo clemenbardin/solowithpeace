@@ -1,0 +1,26 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
+
+rule_files:
+  - "rules/alerts.yml"
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'solowithpeace-backend'
+    static_configs:
+      - targets: ['backend:5000']
+    metrics_path: '/metrics'
+
+  # Métriques système des containers (optionnel mais recommandé)
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']

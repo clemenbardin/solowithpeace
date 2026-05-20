@@ -55,4 +55,5 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Publish staging metadata
-        run: echo "Staging images pushed: ${{ env.IMAGE_BACKEND }}:develop and ${{ env.IMAGE_FRONTEND }}:develop"
+        run: |
+          echo 'Staging images pushed: ${{ env.IMAGE_BACKEND }}:develop and ${{ env.IMAGE_FRONTEND }}:develop'
