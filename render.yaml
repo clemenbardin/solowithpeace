@@ -8,7 +8,6 @@ services:
     runtime: docker
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
-    dockerfileTarget: production
     plan: free
     region: frankfurt
     healthCheckPath: /api/health
@@ -29,7 +28,6 @@ services:
     runtime: docker
     dockerfilePath: ./frontend/Dockerfile
     dockerContext: ./frontend
-    dockerfileTarget: production
     plan: free
     region: frankfurt
     envVars:
