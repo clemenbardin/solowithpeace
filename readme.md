@@ -1,8 +1,5 @@
 # SoloWithPeace — Plateforme de mise en relation pour voyageurs solos
 
-[![CI](https://github.com/VOTRE_ORG/solowithpeace/actions/workflows/ci.yml/badge.svg)](https://github.com/VOTRE_ORG/solowithpeace/actions/workflows/ci.yml)
-[![Docker](https://github.com/VOTRE_ORG/solowithpeace/actions/workflows/docker.yml/badge.svg)](https://github.com/VOTRE_ORG/solowithpeace/actions/workflows/docker.yml)
-
 **SoloWithPeace** est une plateforme sociale destinée aux voyageurs solos : connexions temporaires, voyages groupés, activités partagées et témoignages de voyageurs.
 
 Stack : **Next.js 16** (frontend) · **Express 5** (backend) · **MongoDB 7** · **Prometheus + Grafana** (monitoring)
