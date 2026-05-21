@@ -21,7 +21,7 @@ SoloWithPeace est une application web de mise en relation de voyageurs solos, su
 │   app/register/         → Inscription                              │
 │   app/dashboard/        → Espace utilisateur                       │
 │   context/AuthContext   → State global JWT (localStorage)          │
-│   next.config.ts        → Proxy rewrites /api/* → backend:5000     │
+│   app/api/[...path]/    → Proxy runtime /api/* → BACKEND_URL       │
 └───────────────────────────────┬────────────────────────────────────┘
                                 │ HTTP proxy /api/*  (solo-network)
 ┌───────────────────────────────▼────────────────────────────────────┐

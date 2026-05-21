@@ -1,11 +1,17 @@
 # Déploiement Continu et Staging
 
+## Environnements
+
+| Environnement | Branche | Hébergement |
+|--------------|---------|-------------|
+| Production | `main` | Render (voir [docs/render.md](render.md)) |
+| Local / Dev | `develop` | Docker Compose |
+
 ## Stratégie
 
-- La branche `develop` est dédiée au staging.
-- Les builds Docker sont générés automatiquement à chaque `push` sur `develop`.
-- Les images sont taguées avec `develop` et un SHA unique.
-- Le déploiement de production reste réservé à la branche `main` avec des tags versionnés.
+- La branche `develop` est dédiée au développement local via Docker Compose.
+- Le déploiement de production se fait depuis `main` vers Render.
+- Render redéploie automatiquement à chaque push sur la branche configurée.
 
 ### Approche recommandée
 
@@ -13,11 +19,11 @@
 - Pour les nouvelles versions critiques : **Blue-Green deployment** afin de basculer rapidement vers une version stable en cas de problème.
 - Pour les mises à jour destinées à un petit groupe : **Canary deployment** pour tester un nouveau build sur une portion limitée du trafic avant une mise en production complète.
 
-## Infrastructure recommandée
+## Infrastructure
 
-- Utiliser un service de déploiement comme Render, Railway ou Heroku.
-- Configurer une base MongoDB de staging séparée de la production.
-- Gérer les secrets via le service choisi ou GitHub Secrets.
+- **Hébergement production** : Render (frontend + backend, plan gratuit)
+- **Base de données** : MongoDB Atlas (cloud, partagé dev/prod)
+- Gérer les secrets via Render Dashboard ou GitHub Secrets.
 
 ## Variables d'environnement et secrets sécurisés
 
