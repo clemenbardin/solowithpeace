@@ -26,14 +26,6 @@
 
 ---
 
-### 4. Script de seed manquant
-
-**Problème** : `backend/db/seed.js` importait `./setup` qui n'existait pas, rendant toute commande de seed inutilisable (`Cannot find module './setup'`).
-
-**Solution** : Créer `backend/db/setup.js` avec les fonctions `seedInitialData` et `resetDatabase`. Le seed peut maintenant être lancé directement avec Node.js sans Docker : `node db/seed.js --reset`.
-
----
-
 ### 5. Conflits package-lock.json
 
 **Problème** : Les merges entre branches généraient systématiquement des conflits sur `package-lock.json`, rendant les merges bloquants.
