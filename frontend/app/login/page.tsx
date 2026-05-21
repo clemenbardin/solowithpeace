@@ -22,7 +22,11 @@ export default function LoginPage() {
     if (result.success) {
       router.push('/dashboard');
     } else {
-      setError(result.error || 'Une erreur est survenue');
+      if (result.statusCode === 503) {
+        router.push('/maintenance');
+      } else {
+        setError(result.error || 'Une erreur est survenue');
+      }
     }
   };
 
