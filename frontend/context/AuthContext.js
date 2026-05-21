@@ -46,7 +46,7 @@ export function AuthProvider({ children }) {
       setUser(data.user);
       return { success: true };
     }
-    return { success: false, error: data.error };
+    return { success: false, error: data.error, statusCode: res.status };
   };
 
   const register = async (email, password, name) => {
