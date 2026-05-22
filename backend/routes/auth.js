@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const FeatureFlag = require('../models/FeatureFlag');
 const { authSuccessTotal } = require('../metrics');
 
 const router = express.Router();
@@ -73,6 +74,15 @@ router.post('/login', async (req, res) => {
     if (!isValid) {
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
     }
+
+    // Vérifier le maintenance_mode pour les utilisateurs non-admin
+    if (user.role !== 'Admin') {
+      const maintenanceFlag = await FeatureFlag.findOne({ key: 'maintenance_mode' });
+      if (maintenanceFlag && maintenanceFlag.enabled) {
+        return res.status(503).json({ error: 'Le site est actuellement en maintenance. Veuillez réessayer plus tard.' });
+      }
+    }
+
     authSuccessTotal.inc();
 
     const token = jwt.sign({ id: user._id.toString(), email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '7d' });

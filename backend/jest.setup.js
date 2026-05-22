@@ -107,8 +107,12 @@ async function seedTestData() {
       name: 'Bannière témoignages',
       description: 'Affiche une bannière spéciale quand les témoignages sont actifs.',
       enabled: true,
-    },
-  ]);
+    },    {
+      key: 'maintenance_mode',
+      name: 'Maintenance Mode',
+      description: 'Enable maintenance mode to restrict access',
+      enabled: false,
+    },  ]);
 }
 
 beforeAll(async () => {
