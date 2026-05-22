@@ -41,12 +41,29 @@ export function AuthProvider({ children }) {
       body: JSON.stringify({ email, password }),
     });
     const data = await res.json();
-    if (res.ok) {
-      localStorage.setItem('token', data.token);
-      setUser(data.user);
-      return { success: true };
+
+    if (!res.ok) return { success: false, error: data.error };
+
+    if (data.mfaRequired) {
+    return { success: false, mfaRequired: true, tempToken: data.tempToken };
     }
-    return { success: false, error: data.error };
+
+    localStorage.setItem('token', data.token);
+    setUser(data.user);
+    return { success: true };
+  };
+
+  const verifyMfa = async (tempToken, code) => {
+    const res = await fetch('/api/auth/mfa/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tempToken, code }),
+    });
+    const data = await res.json();
+    if (!res.ok) return { success: false, error: data.error };
+    localStorage.setItem('token', data.token);
+    setUser(data.user);
+    return { success: true };
   };
 
   const register = async (email, password, name) => {
@@ -77,7 +94,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, verifyMfa }}>
       {children}
     </AuthContext.Provider>
   );
