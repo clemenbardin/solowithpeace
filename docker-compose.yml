@@ -136,8 +136,9 @@ services:
     image: grafana/promtail:latest
     container_name: solo-promtail
     volumes:
-      - /var/log:/var/log:ro
+      - ./monitoring/promtail/promtail-config.yml:/etc/promtail/promtail-config.yml:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    command: -config.file=/etc/promtail/promtail-config.yml
     networks:
       - solo-network
     depends_on:
