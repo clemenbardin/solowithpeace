@@ -4,8 +4,9 @@
 services:
   # ── Backend Node.js/Express ──────────────────────────────────────────────────
   - type: web
-    name: swp-backend
+    name: swp-backend-prod
     runtime: docker
+    branch: main 
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
     plan: free
@@ -24,8 +25,9 @@ services:
 
   # ── Frontend Next.js (standalone) ───────────────────────────────────────────
   - type: web
-    name: swp-frontend
+    name: swp-frontend-prod
     runtime: docker
+    branch: main
     dockerfilePath: ./frontend/Dockerfile
     dockerContext: ./frontend
     plan: free

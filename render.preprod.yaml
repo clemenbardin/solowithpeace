@@ -1,0 +1,44 @@
+# render.yaml — Blueprint de déploiement SoloWithPeace
+# Documentation : https://render.com/docs/blueprint-spec
+
+services:
+  # ── Backend Node.js/Express ──────────────────────────────────────────────────
+  - type: web
+    name: swp-backend-preprod
+    runtime: docker
+    branch: develop
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    region: frankfurt
+    healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        value: 5000
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true      # Render génère un secret aléatoire sécurisé
+      - key: MONGO_URI
+        sync: false              # À renseigner manuellement dans le dashboard Render
+                                 # Format : mongodb+srv://<user>:<pass>@cluster.mongodb.net/<db>
+
+  # ── Frontend Next.js (standalone) ───────────────────────────────────────────
+  - type: web
+    name: swp-frontend-preprod
+    runtime: docker
+    branch: develop
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    plan: free
+    region: frankfurt
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: HOSTNAME
+        value: 0.0.0.0
+      - key: NEXT_PUBLIC_API_URL
+        sync: false              # À renseigner après le déploiement du backend
+                                 # Valeur : https://swp-backend.onrender.com
