@@ -15,9 +15,6 @@ services:
     volumes:
       - ./backend:/app
       - backend_node_modules:/app/node_modules
-    depends_on:
-      mongo:
-        condition: service_healthy
     networks:
       - solo-network
     healthcheck:
@@ -129,7 +126,6 @@ services:
       - loki
 
 volumes:
-  mongo_data:
   backend_node_modules:
   frontend_node_modules:
   frontend_next:
