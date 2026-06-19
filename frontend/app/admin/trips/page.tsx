@@ -2,19 +2,53 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../../../context/AuthContext';
+import { useAuth } from '../../../context/AuthContext';
+
+type AuthUser = {
+  role: string;
+  created_at?: string;
+  name?: string;
+  avatar_initials?: string;
+};
+
+type Trip = {
+  _id: string;
+  title: string;
+  destination: string;
+  description: string;
+  start_date: string;
+  end_date: string;
+  spots_total: number;
+  spots_left: number;
+  category: string;
+};
+
+type TripForm = {
+  title: string;
+  destination: string;
+  description: string;
+  start_date: string;
+  end_date: string;
+  spots_total: number;
+  category: string;
+};
+
+type AuthContext = {
+  user: AuthUser | null;
+  loading: boolean;
+} | null;
 
 export default function AdminTripsPage() {
-  const auth = useAuth() as { user?: any; loading?: boolean } | null;
+  const auth = useAuth() as AuthContext;
   const user = auth?.user;
   const loading = auth?.loading;
   const router = useRouter();
 
-  const [trips, setTrips] = useState<any[]>([]);
+  const [trips, setTrips] = useState<Trip[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [editing, setEditing] = useState<any | null>(null);
-  const [form, setForm] = useState<any>({ title: '', destination: '', description: '', start_date: '', end_date: '', spots_total: 8, category: '' });
+  const [editing, setEditing] = useState<Trip | null>(null);
+  const [form, setForm] = useState<TripForm>({ title: '', destination: '', description: '', start_date: '', end_date: '', spots_total: 8, category: '' });
 
   useEffect(() => {
     if (!loading && !user) { router.replace('/login'); return; }
@@ -31,10 +65,10 @@ export default function AdminTripsPage() {
       const res = await fetch('/api/trips');
       const data = await res.json();
       if (Array.isArray(data)) setTrips(data);
-    } catch (e) { setError('Impossible de charger les voyages'); }
+    } catch { setError('Impossible de charger les voyages'); }
   };
 
-  const submit = async (e) => {
+  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSaving(true); setError(null);
     try {
@@ -55,14 +89,14 @@ export default function AdminTripsPage() {
         setTrips((cur) => [saved, ...cur]);
       }
       setForm({ title: '', destination: '', description: '', start_date: '', end_date: '', spots_total: 8, category: '' });
-    } catch (err) {
+    } catch {
       setError('Erreur lors de l\'enregistrement');
     } finally { setSaving(false); }
   };
 
-  const edit = (t) => { setEditing(t); setForm({ title: t.title, destination: t.destination, description: t.description || '', start_date: t.start_date || '', end_date: t.end_date || '', spots_total: t.spots_total || 8, category: t.category || '' }); };
+  const edit = (t: Trip) => { setEditing(t); setForm({ title: t.title, destination: t.destination, description: t.description || '', start_date: t.start_date || '', end_date: t.end_date || '', spots_total: t.spots_total || 8, category: t.category || '' }); };
 
-  const remove = async (id) => {
+  const remove = async (id: string) => {
     if (!confirm('Supprimer ce voyage ?')) return;
     setSaving(true); setError(null);
     try {
@@ -91,8 +125,8 @@ export default function AdminTripsPage() {
           <input required value={form.destination} onChange={(e) => setForm({ ...form, destination: e.target.value })} placeholder="Destination" className="p-3 rounded-lg border" />
           <input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="Catégorie" className="p-3 rounded-lg border" />
           <input type="number" value={form.spots_total} onChange={(e) => setForm({ ...form, spots_total: Number(e.target.value) })} placeholder="Places totales" className="p-3 rounded-lg border" />
-          <input value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} placeholder="Date de début" className="p-3 rounded-lg border" />
-          <input value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })} placeholder="Date de fin" className="p-3 rounded-lg border" />
+          <input type="date" value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} placeholder="Date de début" className="p-3 rounded-lg border" />
+          <input type="date" value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })} placeholder="Date de fin" className="p-3 rounded-lg border" />
           <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Description" className="p-3 rounded-lg border col-span-2" />
           <div className="col-span-2 flex gap-2">
             <button disabled={saving} type="submit" className="rounded-full bg-emerald-600 px-4 py-2 text-white">{editing ? 'Mettre à jour' : 'Ajouter'}</button>

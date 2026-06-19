@@ -30,8 +30,21 @@ function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+type AuthUser = {
+  role: string;
+  created_at?: string;
+  name?: string;
+  avatar_initials?: string;
+};
+
+type AuthContext = {
+  user: AuthUser | null;
+  logout?: () => Promise<void>;
+  loading: boolean;
+} | null;
+
 export default function DashboardPage() {
-  const auth = useAuth() as { user?: any; logout?: () => Promise<void>; loading?: boolean } | null;
+  const auth = useAuth() as AuthContext;
   const user = auth?.user;
   const logout = auth?.logout;
   const loading = auth?.loading;
@@ -108,7 +121,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-2">
             {user.role === 'Admin' && (
               <a
-                href="/admin/feature-flags"
+                href="/admin"
                 className="hidden sm:inline-flex items-center gap-2 rounded-full border border-emerald-500 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors"
               >
                 Administration

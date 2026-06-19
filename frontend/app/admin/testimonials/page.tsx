@@ -2,19 +2,50 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../../../context/AuthContext';
+import { useAuth } from '../../../context/AuthContext';
+
+type AuthUser = {
+  role: string;
+  created_at?: string;
+  name?: string;
+  avatar_initials?: string;
+};
+
+type Testimonial = {
+  _id: string;
+  author_name: string;
+  author_initials: string;
+  author_color: string;
+  quote_title: string;
+  quote_body: string;
+  subtitle?: string;
+};
+
+type TestimonialForm = {
+  author_name: string;
+  author_initials: string;
+  author_color: string;
+  quote_title: string;
+  quote_body: string;
+  subtitle: string;
+};
+
+type AuthContext = {
+  user: AuthUser | null;
+  loading: boolean;
+} | null;
 
 export default function AdminTestimonialsPage() {
-  const auth = useAuth() as { user?: any; loading?: boolean } | null;
+  const auth = useAuth() as AuthContext;
   const user = auth?.user;
   const loading = auth?.loading;
   const router = useRouter();
 
-  const [items, setItems] = useState<any[]>([]);
+  const [items, setItems] = useState<Testimonial[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [editing, setEditing] = useState<any | null>(null);
-  const [form, setForm] = useState<any>({ author_name: '', author_initials: '', author_color: 'emerald', quote_title: '', quote_body: '', subtitle: '' });
+  const [editing, setEditing] = useState<Testimonial | null>(null);
+  const [form, setForm] = useState<TestimonialForm>({ author_name: '', author_initials: '', author_color: 'emerald', quote_title: '', quote_body: '', subtitle: '' });
 
   useEffect(() => {
     if (!loading && !user) { router.replace('/login'); return; }
@@ -29,10 +60,10 @@ export default function AdminTestimonialsPage() {
       const res = await fetch('/api/testimonials');
       const data = await res.json();
       if (Array.isArray(data)) setItems(data);
-    } catch (e) { setError('Impossible de charger les témoignages'); }
+    } catch { setError('Impossible de charger les témoignages'); }
   };
 
-  const submit = async (e) => {
+  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSaving(true); setError(null);
     try {
@@ -53,12 +84,12 @@ export default function AdminTestimonialsPage() {
         setItems((cur) => [saved, ...cur]);
       }
       setForm({ author_name: '', author_initials: '', author_color: 'emerald', quote_title: '', quote_body: '', subtitle: '' });
-    } catch (err) { setError('Erreur lors de l\'enregistrement'); } finally { setSaving(false); }
+    } catch { setError('Erreur lors de l\'enregistrement'); } finally { setSaving(false); }
   };
 
-  const edit = (t) => { setEditing(t); setForm({ author_name: t.author_name, author_initials: t.author_initials, author_color: t.author_color || 'emerald', quote_title: t.quote_title, quote_body: t.quote_body, subtitle: t.subtitle || '' }); };
+  const edit = (t: Testimonial) => { setEditing(t); setForm({ author_name: t.author_name, author_initials: t.author_initials, author_color: t.author_color || 'emerald', quote_title: t.quote_title, quote_body: t.quote_body, subtitle: t.subtitle || '' }); };
 
-  const remove = async (id) => {
+  const remove = async (id: string) => {
     if (!confirm('Supprimer ce témoignage ?')) return;
     setSaving(true); setError(null);
     try {
@@ -85,7 +116,13 @@ export default function AdminTestimonialsPage() {
         <form onSubmit={submit} className="mb-6 grid gap-3 sm:grid-cols-2">
           <input required value={form.author_name} onChange={(e) => setForm({ ...form, author_name: e.target.value })} placeholder="Nom de l'auteur" className="p-3 rounded-lg border" />
           <input required value={form.author_initials} onChange={(e) => setForm({ ...form, author_initials: e.target.value })} placeholder="Initiales" className="p-3 rounded-lg border" />
-          <input value={form.author_color} onChange={(e) => setForm({ ...form, author_color: e.target.value })} placeholder="Couleur" className="p-3 rounded-lg border" />
+          <select value={form.author_color} onChange={(e) => setForm({ ...form, author_color: e.target.value })} className="p-3 rounded-lg border">
+            <option value="emerald">Émeraude</option>
+            <option value="blue">Bleu</option>
+            <option value="purple">Violet</option>
+            <option value="rose">Rose</option>
+            <option value="amber">Ambre</option>
+          </select>
           <input required value={form.quote_title} onChange={(e) => setForm({ ...form, quote_title: e.target.value })} placeholder="Titre du quote" className="p-3 rounded-lg border" />
           <textarea required value={form.quote_body} onChange={(e) => setForm({ ...form, quote_body: e.target.value })} placeholder="Texte" className="p-3 rounded-lg border col-span-2" />
           <input value={form.subtitle} onChange={(e) => setForm({ ...form, subtitle: e.target.value })} placeholder="Sous-titre" className="p-3 rounded-lg border" />
