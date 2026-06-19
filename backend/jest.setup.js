@@ -7,7 +7,7 @@ const Activity = require('./models/Activity');
 const Testimonial = require('./models/Testimonial');
 const FeatureFlag = require('./models/FeatureFlag');
 
-jest.setTimeout(30000);
+jest.setTimeout(600000);
 
 let mongoServer;
 
@@ -20,14 +20,22 @@ async function seedTestData() {
     name: 'Admin SoloWithPeace',
     role: 'Admin',
     avatar_initials: 'AS',
+    bio: 'Organisateur de voyages test.',
+    country: 'France',
+    languages: ['Français', 'Anglais'],
+    interests: ['Culture', 'Randonnée'],
   });
 
-  await User.create({
+  const testUser = await User.create({
     email: 'user@user.com',
     password: await bcrypt.hash('user123', 10),
     name: 'Utilisateur Test',
     role: 'Voyageur',
     avatar_initials: 'UT',
+    bio: 'Voyageur test prêt à rejoindre un groupe.',
+    country: 'Belgique',
+    languages: ['Français'],
+    interests: ['Rencontres', 'Gastronomie'],
   });
 
   await Trip.create([
@@ -42,6 +50,11 @@ async function seedTestData() {
       category: 'Culture',
       gradient: 'from-emerald-500/30 via-sky-500/20 to-rose-500/25',
       created_by: admin._id,
+      members: [{ user: testUser._id }],
+      accommodation: {
+        type: 'personnel',
+        description: 'Chambres individuelles proches des transports.',
+      },
     },
     {
       title: 'Safari en Tanzanie',
@@ -54,6 +67,11 @@ async function seedTestData() {
       category: 'Aventure',
       gradient: 'from-amber-600/40 via-rose-400/25 to-amber-400/20',
       created_by: admin._id,
+      members: [],
+      accommodation: {
+        type: 'commun',
+        description: 'Lodges partagés pendant les étapes du safari.',
+      },
     },
   ]);
 

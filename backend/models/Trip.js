@@ -11,6 +11,14 @@ const tripSchema = new mongoose.Schema({
   category:    { type: String },
   gradient:    { type: String },
   created_by:  { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  members: [{
+    user:      { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    joined_at: { type: Date, default: Date.now },
+  }],
+  accommodation: {
+    type:        { type: String, enum: ['commun', 'personnel'], default: 'commun' },
+    description: { type: String },
+  },
 }, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } });
 
 module.exports = mongoose.model('Trip', tripSchema);

@@ -62,6 +62,14 @@ describe('Trips Routes', () => {
       expect(res.body.title).toBeDefined();
     });
 
+    it('retourne les participants peuplés', async () => {
+      const res = await request(app).get(`/api/trips/${cultureTripId}`);
+      expect(res.status).toBe(200);
+      expect(res.body.members.length).toBeGreaterThan(0);
+      expect(res.body.members[0].user.name).toBeDefined();
+      expect(res.body.members[0].user.email).toBeUndefined();
+    });
+
     it('retourne 404 pour un id inexistant', async () => {
       const missingId = new mongoose.Types.ObjectId().toString();
       const res = await request(app).get(`/api/trips/${missingId}`);
@@ -71,12 +79,40 @@ describe('Trips Routes', () => {
 
   describe('POST /api/trips/:id/join', () => {
     it('rejoint un voyage avec token valide', async () => {
+      const before = await request(app).get(`/api/trips/${firstTripId}`);
       const res = await request(app)
         .post(`/api/trips/${firstTripId}/join`)
         .set('Authorization', `Bearer ${token}`);
 
       expect(res.status).toBe(200);
       expect(res.body.message).toBeDefined();
+      expect(res.body.trip.members.length).toBe(before.body.members.length + 1);
+      expect(res.body.trip.spots_left).toBe(before.body.spots_left - 1);
+    });
+
+    it('refuse une inscription doublon', async () => {
+      await request(app)
+        .post(`/api/trips/${firstTripId}/join`)
+        .set('Authorization', `Bearer ${token}`);
+
+      const res = await request(app)
+        .post(`/api/trips/${firstTripId}/join`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toMatch(/déjà rejoint/);
+    });
+
+    it('refuse un voyage complet', async () => {
+      const Trip = require('../models/Trip');
+      await Trip.findByIdAndUpdate(firstTripId, { spots_left: 0 });
+
+      const res = await request(app)
+        .post(`/api/trips/${firstTripId}/join`)
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toMatch(/Plus de places/);
     });
 
     it('refuse de rejoindre sans token', async () => {

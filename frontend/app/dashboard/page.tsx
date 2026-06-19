@@ -224,12 +224,19 @@ export default function DashboardPage() {
                         <span className="text-xs text-zinc-500">
                           {formatDate(trip.start_date)}
                         </span>
-                        <button
-                          disabled={trip.spots_left === 0}
-                          className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-bold text-white hover:bg-zinc-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        <Link
+                          href={`/voyages/${trip.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-disabled={trip.spots_left === 0}
+                          className={`rounded-full px-3 py-1 text-xs font-bold text-white transition-colors ${
+                            trip.spots_left === 0
+                              ? 'pointer-events-none bg-zinc-900 opacity-40'
+                              : 'bg-zinc-900 hover:bg-zinc-800'
+                          }`}
                         >
                           {trip.spots_left === 0 ? 'Complet' : 'Rejoindre'}
-                        </button>
+                        </Link>
                       </div>
                     </div>
                   </article>

@@ -19,7 +19,9 @@ router.get('/', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const trip = await Trip.findById(req.params.id);
+    const trip = await Trip.findById(req.params.id)
+      .populate('created_by', 'name role avatar_initials')
+      .populate('members.user', 'name role avatar_initials');
     if (!trip) {return res.status(404).json({ error: 'Voyage non trouvé' });}
     res.json(trip);
   } catch (err) {
@@ -33,10 +35,19 @@ router.post('/:id/join', verifyToken, async (req, res) => {
     const trip = await Trip.findById(req.params.id);
     if (!trip) {return res.status(404).json({ error: 'Voyage non trouvé' });}
     if (trip.spots_left <= 0) {return res.status(400).json({ error: 'Plus de places disponibles' });}
+    const alreadyMember = trip.members.some((member) => member.user.toString() === req.user.id);
+    if (alreadyMember) {return res.status(400).json({ error: 'Vous avez déjà rejoint ce voyage' });}
 
-    await Trip.findByIdAndUpdate(req.params.id, { $inc: { spots_left: -1 } });
+    const updatedTrip = await Trip.findByIdAndUpdate(
+      req.params.id,
+      {
+        $push: { members: { user: req.user.id } },
+        $inc: { spots_left: -1 },
+      },
+      { new: true }
+    ).populate('members.user', 'name role avatar_initials');
     tripsJoinedTotal.inc();
-    res.json({ message: 'Inscription confirmée', trip_id: trip._id });
+    res.json({ message: 'Inscription confirmée', trip: updatedTrip });
   } catch (err) {
     console.error('[trips POST /:id/join]', err);
     res.status(500).json({ error: 'Erreur serveur' });

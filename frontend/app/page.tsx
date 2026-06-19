@@ -322,9 +322,14 @@ export default function Home() {
                           {formatDate(trip.start_date)} → {formatDate(trip.end_date)}
                         </span>
                         {user ? (
-                          <button className="text-xs font-semibold text-zinc-900 hover:text-zinc-600 transition-colors">
+                          <Link
+                            href={`/voyages/${trip.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs font-semibold text-zinc-900 hover:text-zinc-600 transition-colors"
+                          >
                             Rejoindre →
-                          </button>
+                          </Link>
                         ) : (
                           <Link href="/register" className="text-xs font-semibold text-zinc-900 hover:text-zinc-600 transition-colors">
                             S&apos;inscrire →
