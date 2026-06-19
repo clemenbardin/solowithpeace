@@ -74,6 +74,36 @@ describe('Auth Routes', () => {
 
       expect(res.status).toBe(400);
     });
+
+    it('bloque les utilisateurs non-admin quand maintenance_mode est actif', async () => {
+      const FeatureFlag = require('../models/FeatureFlag');
+      await FeatureFlag.updateOne({ key: 'maintenance_mode' }, { enabled: true });
+
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'user@user.com', password: 'user123' });
+
+      expect(res.status).toBe(503);
+      expect(res.body.error).toContain('maintenance');
+
+      // Nettoyer après le test
+      await FeatureFlag.updateOne({ key: 'maintenance_mode' }, { enabled: false });
+    });
+
+    it('permet aux admins de se connecter même en maintenance_mode', async () => {
+      const FeatureFlag = require('../models/FeatureFlag');
+      await FeatureFlag.updateOne({ key: 'maintenance_mode' }, { enabled: true });
+
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'admin@admin.com', password: 'admin' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.token).toBeDefined();
+
+      // Nettoyer après le test
+      await FeatureFlag.updateOne({ key: 'maintenance_mode' }, { enabled: false });
+    });
   });
 
   describe('POST /api/auth/logout', () => {
@@ -87,7 +117,7 @@ describe('Auth Routes', () => {
   describe('GET /api/auth/me', () => {
     let token;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       const res = await request(app)
         .post('/api/auth/login')
         .send({ email: 'admin@admin.com', password: 'admin' });

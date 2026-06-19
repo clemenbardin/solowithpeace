@@ -21,7 +21,7 @@ SoloWithPeace est une application web de mise en relation de voyageurs solos, su
 │   app/register/         → Inscription                              │
 │   app/dashboard/        → Espace utilisateur                       │
 │   context/AuthContext   → State global JWT (localStorage)          │
-│   next.config.ts        → Proxy rewrites /api/* → backend:5000     │
+│   app/api/[...path]/    → Proxy runtime /api/* → BACKEND_URL       │
 └───────────────────────────────┬────────────────────────────────────┘
                                 │ HTTP proxy /api/*  (solo-network)
 ┌───────────────────────────────▼────────────────────────────────────┐
@@ -71,9 +71,9 @@ SoloWithPeace est une application web de mise en relation de voyageurs solos, su
 │  └──────────────┘  └──────────────┘  └──────────────────────────┘ │
 │                                                                    │
 │  ┌──────────────┐  ┌──────────────┐                               │
-│  │solo-node-exp │  │  solo-loki   │◄── solo-promtail              │
-│  │ :9100        │  │ :3100        │    (agent logs Docker)        │
-│  │ Node Exporter│  │ Loki 2.9     │                               │
+│  │solo-cadvisor │  │  solo-loki   │◄── solo-promtail              │
+│  │ :8080        │  │ :3100        │    (agent logs Docker)        │
+│  │ cAdvisor     │  │ Loki         │                               │
 │  └──────────────┘  └──────────────┘                               │
 └────────────────────────────────────────────────────────────────────┘
 ```
@@ -88,8 +88,6 @@ SoloWithPeace est une application web de mise en relation de voyageurs solos, su
 | `frontend_next` | Cache de build Next.js | solo-frontend |
 | `prometheus_data` | Métriques (rétention 30j) | solo-prometheus |
 | `grafana_data` | Dashboards, utilisateurs, sessions | solo-grafana |
-| `alertmanager_data` | État des silences | solo-alertmanager |
-| `loki_data` | Logs (rétention 7j) | solo-loki |
 
 ---
 
@@ -223,7 +221,7 @@ Express est le framework Node.js le plus répandu, avec le plus grand écosystè
 
 ### Next.js App Router (vs Pages Router)
 
-Le projet utilise Next.js 16 avec l'App Router pour bénéficier du **server-side rendering** et de la colocation des composants. Le proxy natif (`rewrites` dans `next.config.ts`) évite les problèmes CORS en développement.
+Le projet utilise Next.js 16 avec l'App Router pour bénéficier du **server-side rendering** et de la colocation des composants. Une route API catch-all (`app/api/[...path]/route.ts`) proxifie les appels vers le backend au runtime, évitant les problèmes CORS et les dépendances de build.
 
 ### Dockerfiles multi-stage
 

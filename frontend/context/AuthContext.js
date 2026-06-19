@@ -47,23 +47,7 @@ export function AuthProvider({ children }) {
     if (data.mfaRequired) {
     return { success: false, mfaRequired: true, tempToken: data.tempToken };
     }
-
-    localStorage.setItem('token', data.token);
-    setUser(data.user);
-    return { success: true };
-  };
-
-  const verifyMfa = async (tempToken, code) => {
-    const res = await fetch('/api/auth/mfa/verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tempToken, code }),
-    });
-    const data = await res.json();
-    if (!res.ok) return { success: false, error: data.error };
-    localStorage.setItem('token', data.token);
-    setUser(data.user);
-    return { success: true };
+    return { success: false, error: data.error, statusCode: res.status };
   };
 
   const register = async (email, password, name) => {

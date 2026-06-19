@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const speakeasy = require('speakeasy');
 const qrcode = require('qrcode');
 const User = require('../models/User');
+const FeatureFlag = require('../models/FeatureFlag');
 const { authSuccessTotal } = require('../metrics');
 
 const router = express.Router();
@@ -75,6 +76,15 @@ router.post('/login', async (req, res) => {
     if (!isValid) {
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
     }
+
+    // Vérifier le maintenance_mode pour les utilisateurs non-admin
+    if (user.role !== 'Admin') {
+      const maintenanceFlag = await FeatureFlag.findOne({ key: 'maintenance_mode' });
+      if (maintenanceFlag && maintenanceFlag.enabled) {
+        return res.status(503).json({ error: 'Le site est actuellement en maintenance. Veuillez réessayer plus tard.' });
+      }
+    }
+
     authSuccessTotal.inc();
 
     if (user.mfa_enabled) {
