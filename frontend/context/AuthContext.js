@@ -41,10 +41,11 @@ export function AuthProvider({ children }) {
       body: JSON.stringify({ email, password }),
     });
     const data = await res.json();
-    if (res.ok) {
-      localStorage.setItem('token', data.token);
-      setUser(data.user);
-      return { success: true };
+
+    if (!res.ok) return { success: false, error: data.error };
+
+    if (data.mfaRequired) {
+    return { success: false, mfaRequired: true, tempToken: data.tempToken };
     }
     return { success: false, error: data.error, statusCode: res.status };
   };
@@ -77,7 +78,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, verifyMfa }}>
       {children}
     </AuthContext.Provider>
   );
