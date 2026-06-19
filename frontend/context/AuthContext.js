@@ -1,13 +1,13 @@
 'use client';
-
+ 
 import { createContext, useContext, useState, useEffect } from 'react';
-
+ 
 const AuthContext = createContext(null);
-
+ 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-
+ 
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -16,7 +16,7 @@ export function AuthProvider({ children }) {
       setLoading(false);
     }
   }, []);
-
+ 
   const fetchUser = async (token) => {
     try {
       const res = await fetch('/api/auth/me', {
@@ -33,7 +33,7 @@ export function AuthProvider({ children }) {
       setLoading(false);
     }
   };
-
+ 
   const login = async (email, password) => {
     const res = await fetch('/api/auth/login', {
       method: 'POST',
@@ -41,15 +41,14 @@ export function AuthProvider({ children }) {
       body: JSON.stringify({ email, password }),
     });
     const data = await res.json();
-
-    if (!res.ok) return { success: false, error: data.error };
-
-    if (data.mfaRequired) {
-    return { success: false, mfaRequired: true, tempToken: data.tempToken };
+    if (res.ok) {
+      localStorage.setItem('token', data.token);
+      setUser(data.user);
+      return { success: true };
     }
     return { success: false, error: data.error, statusCode: res.status };
   };
-
+ 
   const register = async (email, password, name) => {
     const res = await fetch('/api/auth/register', {
       method: 'POST',
@@ -64,7 +63,7 @@ export function AuthProvider({ children }) {
     }
     return { success: false, error: data.error };
   };
-
+ 
   const logout = async () => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -76,14 +75,14 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('token');
     setUser(null);
   };
-
+ 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, verifyMfa }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );
 }
-
+ 
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
